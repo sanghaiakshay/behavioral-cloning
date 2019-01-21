@@ -2,8 +2,9 @@ import argparse
 import base64
 from datetime import datetime
 import os
+import cv2
 import shutil
-
+from keras.applications.imagenet_utils import preprocess_input
 import numpy as np
 import socketio
 import eventlet
@@ -60,12 +61,15 @@ def telemetry(sid, data):
         # The current image from the center camera of the car
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
-        image_array = np.asarray(image)
-        steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
+        image_r = image.resize((160,160))
+        image_array = np.asarray(image_r)
+        image_array = image_array.astype('float32')
+        image_array = image_array[None, :, :, :]
+        steering_angle = float(model.predict(image_array, batch_size=1))
 
         throttle = controller.update(float(speed))
 
-        print(steering_angle, throttle)
+        print(steering_angle)
         send_control(steering_angle, throttle)
 
         # save frame
